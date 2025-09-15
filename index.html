@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Game Clicker</title>
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  color: #fff;
+  text-align: center;
+  background: linear-gradient(135deg, #0044cc, #0099ff);
+  background-size: 400% 400%;
+  animation: bgAnim 20s ease infinite;
+  perspective: 1000px;
+}
+
+@keyframes bgAnim {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+#container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+p {
+  margin: 10px 0;
+  font-size: clamp(16px, 2.5vw, 22px);
+  text-shadow: 0 0 5px #000, 0 0 10px #00f, 0 0 15px #0ff;
+}
+
+button {
+  width: clamp(150px, 60vw, 300px);
+  height: clamp(50px, 12vh, 100px);
+  margin: 10px;
+  border: none;
+  border-radius: 16px;
+  font-size: clamp(16px, 4vw, 24px);
+  font-weight: bold;
+  color: #222;
+  background: linear-gradient(145deg, #fff, #ccc);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5),
+              inset 0 -4px 6px rgba(0,0,0,0.2),
+              0 4px 15px rgba(255,255,255,0.2);
+  transition: transform 0.1s ease, background 0.3s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  animation: pulse 1.2s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1) rotateX(0deg); box-shadow: 0 8px 20px rgba(0,0,0,0.5), inset 0 -4px 6px rgba(0,0,0,0.2); }
+  50% { transform: scale(1.05) rotateX(5deg); box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 -4px 6px rgba(0,0,0,0.25); }
+}
+
+.floating {
+  position: absolute;
+  font-weight: bold;
+  color: #ff0;
+  text-shadow: 1px 1px 2px #000, 0 0 5px #ff0, 0 0 10px #fff;
+  animation: floatUp 0.8s ease forwards, floatRotate 0.8s ease forwards, popScale 0.15s ease forwards;
+  pointer-events: none;
+  font-size: clamp(14px, 3vw, 22px);
+  transform-style: preserve-3d;
+}
+
+@keyframes floatUp { to { transform: translateY(-60px) scale(1.4); opacity: 0; } }
+@keyframes floatRotate { to { transform: translateY(-60px) rotate(20deg); } }
+@keyframes popScale { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+</style>
+</head>
+<body>
+<div id="container">
+  <p>The Game Clicker</p>
+  <p id="clickmsg">Clicks: 0</p>
+  <p id="multimsg">Multiplicador: 1X</p>
+  <button id="clickbtn">Click me!</button>
+  <br>
+  <button id="upgbtn">Upgrade 1: Custo: 20</button>
+</div>
+
+<script>
+let clicks = 0
+let multi = 1
+let upgradeLevel = 1
+
+const clickbtn = document.getElementById("clickbtn")
+const upgbtn = document.getElementById("upgbtn")
+const clickmsg = document.getElementById("clickmsg")
+const multimsg = document.getElementById("multimsg")
+
+function upgCost(lvl) {
+  return Math.floor(20 * Math.pow(1.8, lvl - 1))
+}
+
+function upgPower(lvl) {
+  return Math.floor(1 + (lvl - 1) * 1.5)
+}
+
+function updateGUI() {
+  clickmsg.textContent = `Clicks: ${clicks}`
+  multimsg.textContent = `Multiplicador: ${multi}X`
+  upgbtn.textContent = `Upgrade ${upgradeLevel}: Custo ${upgCost(upgradeLevel)}`
+}
+
+function saveGame() {
+  localStorage.setItem("clicks", clicks)
+  localStorage.setItem("multi", multi)
+  localStorage.setItem("upgradeLevel", upgradeLevel)
+}
+
+function loadGame() {
+  clicks = parseInt(localStorage.getItem("clicks")) || 0
+  multi = parseInt(localStorage.getItem("multi")) || 1
+  upgradeLevel = parseInt(localStorage.getItem("upgradeLevel")) || 1
+  updateGUI()
+}
+
+clickbtn.addEventListener("click", function() {
+  clicks += multi
+  updateGUI()
+
+  const span = document.createElement("span")
+  span.className = "floating"
+  span.textContent = `+${multi}`
+  const rect = clickbtn.getBoundingClientRect()
+  span.style.left = `${rect.left + rect.width/2 + (Math.random()-0.5)*rect.width}px`
+  span.style.top = `${rect.top - 20 + window.scrollY}px`
+  document.body.appendChild(span)
+
+  span.animate([
+    { transform: 'translateY(0px)', opacity: 1 },
+    { transform: 'translateY(-60px)', opacity: 0 }
+  ], { duration: 700, easing: 'ease-out' })
+
+  setTimeout(() => span.remove(), 700)
+  saveGame()
+})
+
+upgbtn.addEventListener("click", function() {
+  const custo = upgCost(upgradeLevel)
+  if(clicks >= custo) {
+    clicks -= custo
+    multi = upgPower(upgradeLevel)
+    upgradeLevel++
+    updateGUI()
+    saveGame()
+  }
+})
+
+loadGame()
+</script>
+</body>
+</html>
